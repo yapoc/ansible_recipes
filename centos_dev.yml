@@ -37,15 +37,6 @@
     yum:
       name: /tmp/elasticsearch.rpm
       state: present
-  - name: "Création de l'utilisateur {{ user }}."
-    user:
-      name: "{{ user }}"
-      comment: "Utilisateur créé automatiquement par ansible."
-      shell: /bin/bash
-      state: present
-      password: "{{ password }}"
-      createhome: yes
-      update_password: always
   - name: Ajout des repos un peu tordus pour accéder à PHP7.1 & redis.
     yum:
       name: "{{ item }}"
@@ -94,6 +85,16 @@
       state: mounted
   - name: Installation des additions.
     command: /media/additions/VBoxLinuxAdditions.run
+  - name: "Création de l'utilisateur {{ user }}."
+    user:
+      name: "{{ user }}"
+      comment: "Utilisateur créé automatiquement par ansible."
+      groups: vboxsf
+      shell: /bin/bash
+      state: present
+      password: "{{ password }}"
+      createhome: yes
+      update_password: always
     
 
 
