@@ -1,6 +1,8 @@
 L'objectif de ce dépôt est de contenir un certain nombre de recette `ansible` qui me sont nécessaires, d'une manière ou d'une autre dans ma vie.
 
 # Exécution d'une recette
+**Se fait obligatoirement en tant que `root`.**
+
 ## Optionnel
 ```
 export http_proxy=8<...>8
