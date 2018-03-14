@@ -33,12 +33,6 @@
       - java-1.7.0-openjdk
   - name: Récupération du RPM elasticsearch
     command: wget -O /tmp/elasticsearch.rpm https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.2.rpm
-## Ce modèle ne fonctionne pas pour cause de variable de proxy non prise en compte...
-#  - name: Récupération du RPM elasticsearch
-#    get_url:
-#      url: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.2.rpm
-#      dest: /tmp/elasticsearch.rpm
-#      mode: 0644
   - name: Installation du RPM elasticsearch
     yum:
       name: /tmp/elasticsearch.rpm
