@@ -19,9 +19,18 @@
       private: no
       default: /tmp
   tasks:
+  - name: Ajout des repos un peu tordus pour accéder à PHP7.1 & redis.
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - centos-release-scl.noarch
+      - epel-release.noarch
   - name: Mise à jour du système.
     yum: name=* state=latest
-  - name: Installation des paquets nécessaires au bon fonctionnement du bureau.
+  - name: Récupération du RPM elasticsearch
+    command: wget -O /tmp/elasticsearch.rpm https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.2.rpm
+  - name: Installation des paquets nécessaires.
     yum:
       name: "{{ item }}"
       state: present
@@ -30,37 +39,21 @@
       - vim
       - "@^gnome-desktop-environment"
       - gdm
-  - name: Installation des paquets nécessaires au développement & présents dans les répos officiels (PHP5 & MySQL en fait...).
-    yum:
-      name: "{{ item }}"
-      state: present
-    with_items:
       - php-5.4.16-43.el7_4.1
       - mariadb-server-5.5.56-2.el7
       - mariadb-5.5.56-2.el7
       - java-1.7.0-openjdk
-  - name: Récupération du RPM elasticsearch
-    command: wget -O /tmp/elasticsearch.rpm https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.2.rpm
-  - name: Installation du RPM elasticsearch
-    yum:
-      name: /tmp/elasticsearch.rpm
-      state: present
-  - name: Ajout des repos un peu tordus pour accéder à PHP7.1 & redis.
-    yum:
-      name: "{{ item }}"
-      state: present
-    with_items:
-      - centos-release-scl.noarch
-      - epel-release.noarch
-  - name: Installation de PHP7.1 et des modules nécessaires.
-    yum:
-      name: "{{ item }}"
-      state: present
-    with_items:
+      - /tmp/elasticsearch.rpm
       - rh-php71
       - rh-php71-php
       - rh-php71-php-fpm
       - rh-php71-php-cli
+      - redis
+      - dkms
+      - kernel-devel
+      - bzip2
+      - gcc
+      - make
   - name: Ajout de PHP7.1 au PATH
     file:
       src: /opt/rh/rh-php71/root/usr/bin/php
@@ -68,23 +61,9 @@
       owner: root
       group: root
       state: link
-  - name: Installation de redis
-    yum:
-      name: redis
-      state: present
-  - name: Installation des paquets nécessaires à la compilation des extensions VirtualBox
-    yum:
-      name: "{{ item }}"
-      state: present
-    with_items:
-      - dkms
-      - kernel-devel
-      - bzip2
-      - gcc
-      - make
-  - name: Téléchargement de l'ISO
+  - name: Téléchargement de l'ISO VBoxGuestAdditions
     command: wget -O /tmp/additions.iso "http://download.virtualbox.org/virtualbox/{{ vb_version }}/VBoxGuestAdditions_{{ vb_version }}.iso"
-  - name: Montage de l'ISO récemment téléchargée.
+  - name: Montage de l'ISO VBoxGuestAdditions.
     mount:
       src: /tmp/additions.iso
       path: /media/additions
@@ -117,7 +96,7 @@
       name: "{{ item }}"
       state: started
     with_items:
-#      - gdm
+      - gdm
       - mariadb
       - elasticsearch
       - redis
