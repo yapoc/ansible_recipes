@@ -46,10 +46,13 @@
       password: "{{ password }}"
       createhome: yes
       update_password: always
-  - name: Installation du paquet qui va permettre d'installer PHP7
+  - name: Ajout des repos un peu tordus pour accéder à PHP7.1 & redis.
     yum:
-      name: centos-release-scl.noarch
+      name: "{{ item }}"
       state: present
+    with_items:
+      - centos-release-scl.noarch
+      - epel-release.noarch
   - name: Installation de PHP7.1 et des modules nécessaires.
     yum:
       name: "{{ item }}"
@@ -66,6 +69,10 @@
       owner: root
       group: root
       state: link
+  - name: Installation de redis
+    yum:
+      name: redis
+      state: present
     
 
 
@@ -78,3 +85,4 @@
 #      - gdm
       - mariadb
       - elasticsearch
+      - redis
