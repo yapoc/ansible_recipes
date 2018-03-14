@@ -13,9 +13,16 @@
       - vim
       - "@^gnome-desktop-environment"
       - gdm
-  - name: Activation du service GDM.
-    service:
-      enabled: no
-      name: gdm
-      state: stopped
-
+  - name: Installation des paquets nécessaires au développement & présents dans les répos officiels (PHP5 & MySQL en fait...).
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - php-5.4.16-43.el7_4.1
+      - mariadb-server-5.5.56-2.el7
+      - mariadb-5.5.56-2.el7
+#  - name: Activation du service GDM.
+#    service:
+#      enabled: no
+#      name: gdm
+#      state: stopped
