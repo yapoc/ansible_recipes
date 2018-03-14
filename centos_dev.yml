@@ -10,6 +10,14 @@
       private: yes
       encrypt: "sha512_crypt"
       salt_size: 7
+    - name: "vb_version"
+      prompt: "Version de VirtualBox pour laquelle télécharger les additions"
+      private: no
+      default: 5.2.8
+    - name: "ac_path"
+      prompt: "Emplacement dans lequel récupérer les autorités de certification internes au format *.cer"
+      private: no
+      default: /tmp
   tasks:
   - name: Mise à jour du système.
     yum: name=* state=latest
@@ -95,9 +103,14 @@
       password: "{{ password }}"
       createhome: yes
       update_password: always
-    
-
-
+  - name: Déploiement de la chaine de certification interne au Groupe.
+    copy:
+      src: "{{ item }}"
+      dest: /etc/pki/ca-trust/source/anchors/
+    with_fileglob:
+      - "/{{ ac_path }}/*.cer"
+  - name: Ajout des certificats au keystore.
+    command: update-ca-trust
   - name: Démarrage & Activation des services.
     service:
       enabled: yes
