@@ -8,9 +8,21 @@ export https_proxy=${http_proxy}
 ```
 
 ## Obligatoire
+  * Déployer la recette sur la machine concernée par le déploiement (`recipe.yml`) dans la suite du document.
+  * Déployer les éventuelles autorités de certification internes sur la machine concernée par le déploiement. Le dossier sera référencé dans la suite par `ac_path`.
+  * Aller à l'endroit où la recette a été copiée et lancer le déploiement.
 ```
-ansible-playbook <RECETTE>.yml
+ansible-playbook recipe.yml
 ```
+
+### Matrice des variables
+Variable | Utilité
+---------|---------
+`user` | Nom du compte utilisateur à créer / modifier pour pouvoir développer correctement.
+`password` | Mot de passe du compte.
+`vb_version` | Version de l'hyperviseur VirtualBox. Utilisé pour installer les VirtualBoxAdditions.
+`ac_path` | Emplacement sur la machine virtuelle dans lequel on a copié les autorités de certification internes.
+
 
 # Présentation des recettes
 ## `centos_dev.yml`
