@@ -46,6 +46,27 @@
       password: "{{ password }}"
       createhome: yes
       update_password: always
+  - name: Installation du paquet qui va permettre d'installer PHP7
+    yum:
+      name: centos-release-scl.noarch
+      state: present
+  - name: Installation de PHP7.1 et des modules nécessaires.
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - rh-php71
+      - rh-php71-php
+      - rh-php71-php-fpm
+      - rh-php71-php-cli
+  - name: Ajout de PHP7.1 au PATH
+    file:
+      src: /opt/rh/rh-php71/root/usr/bin/php
+      dest: /usr/bin/php71
+      owner: root
+      group: root
+      state: link
+    
 
 
   - name: Démarrage & Activation des services.
