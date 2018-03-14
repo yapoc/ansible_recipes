@@ -1,6 +1,15 @@
 - name: Playbook dédié à l'installation d'un socle de développement sur distribution CentOS.
   hosts: localhost
   connection: local
+  vars_prompt:
+    - name: "user"
+      private: no
+      prompt: "Compte utilisateur à créer"
+    - name: "password"
+      prompt: "Mot de passe du compte a creer"
+      private: yes
+      encrypt: "sha512_crypt"
+      salt_size: 7
   tasks:
   - name: Mise à jour du système.
     yum: name=* state=latest
@@ -34,6 +43,17 @@
     yum:
       name: /tmp/elasticsearch.rpm
       state: present
+  - name: "Création de l'utilisateur {{ user }}."
+    user:
+      name: "{{ user }}"
+      comment: "Utilisateur créé automatiquement par ansible."
+      shell: /bin/bash
+      state: present
+      password: "{{ password }}"
+      createhome: yes
+      update_password: always
+
+
   - name: Démarrage & Activation des services.
     service:
       enabled: yes
