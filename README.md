@@ -1,6 +1,13 @@
 L'objectif de ce dépôt est de contenir un certain nombre de recette `ansible` qui me sont nécessaires, d'une manière ou d'une autre dans ma vie.
 
 # Exécution d'une recette
+## Optionnel
+```
+export http_proxy=8<...>8
+export https_proxy=${http_proxy}
+```
+
+## Obligatoire
 ```
 ansible-playbook <RECETTE>.yml
 ```
@@ -20,3 +27,4 @@ Installation d'un socle qui permet de développer sur une VM `CentOS` toute fra�
 ```
 
   * J'ai l'impression d'avoir un vague problème lors de l'acceptation de la licence et de la création de l'utilisateur. Je comprends pas pourquoi `CentOS` est aussi névrosé mais on va dire que c'est trop spécifique à la distribution pour que je me prenne la tête dessus pour le moment.
+  * Il est possible que certains modules PHP ne soient pas installés. Pour ce faire, me fournir la liste.
