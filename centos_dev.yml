@@ -21,8 +21,25 @@
       - php-5.4.16-43.el7_4.1
       - mariadb-server-5.5.56-2.el7
       - mariadb-5.5.56-2.el7
-#  - name: Activation du service GDM.
-#    service:
-#      enabled: no
-#      name: gdm
-#      state: stopped
+      - java-1.7.0-openjdk
+  - name: Récupération du RPM elasticsearch
+    command: wget -O /tmp/elasticsearch.rpm https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.2.rpm
+## Ce modèle ne fonctionne pas pour cause de variable de proxy non prise en compte...
+#  - name: Récupération du RPM elasticsearch
+#    get_url:
+#      url: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.2.2.rpm
+#      dest: /tmp/elasticsearch.rpm
+#      mode: 0644
+  - name: Installation du RPM elasticsearch
+    yum:
+      name: /tmp/elasticsearch.rpm
+      state: present
+  - name: Démarrage & Activation des services.
+    service:
+      enabled: yes
+      name: {{ item }}
+      state: started
+    with_items:
+#      - gdm
+      - mariadb
+      - elasticsearch
