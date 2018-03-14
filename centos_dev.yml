@@ -1,0 +1,21 @@
+- name: Playbook dédié à l'installation d'un socle de développement sur distribution CentOS.
+  hosts: localhost
+  connection: local
+  tasks:
+  - name: Mise à jour du système.
+    yum: name=* state=latest
+  - name: Installation des paquets nécessaires au bon fonctionnement du bureau.
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - firefox
+      - vim
+      - "@^gnome-desktop-environment"
+      - gdm
+  - name: Activation du service GDM.
+    service:
+      enabled: no
+      name: gdm
+      state: stopped
+
