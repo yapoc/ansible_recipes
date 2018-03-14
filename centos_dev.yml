@@ -73,6 +73,27 @@
     yum:
       name: redis
       state: present
+  - name: Installation des paquets nécessaires à la compilation des extensions VirtualBox
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - dkms
+      - kernel-devel
+      - bzip2
+      - gcc
+      - make
+  - name: Téléchargement de l'ISO
+    command: wget -O /tmp/additions.iso "http://download.virtualbox.org/virtualbox/{{ vb_version }}/VBoxGuestAdditions_{{ vb_version }}.iso"
+  - name: Montage de l'ISO récemment téléchargée.
+    mount:
+      src: /tmp/additions.iso
+      path: /media/additions
+      fstype: iso9660
+      opts: noauto
+      state: mounted
+  - name: Installation des additions.
+    command: /media/additions/VBoxLinuxAdditions.run
     
 
 
