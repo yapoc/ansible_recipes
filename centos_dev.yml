@@ -37,7 +37,7 @@
   - name: Démarrage & Activation des services.
     service:
       enabled: yes
-      name: {{ item }}
+      name: "{{ item }}"
       state: started
     with_items:
 #      - gdm
