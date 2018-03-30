@@ -314,6 +314,38 @@
       state: stopped
       name: named
 
+### Déploiement du firewall.
+  - name: Règle pour la loopback
+    iptables: 
+      chain: INPUT 
+      action: append 
+      in_interface: lo 
+      jump: ACCEPT 
+      comment: 'On accepte le traffic sur la loopback'
+  - name: Règle pour les connexions établies
+    iptables: 
+      chain: INPUT
+      ctstate: 'ESTABLISHED,RELATED'
+      jump: ACCEPT
+      comment: 'On garde les connexions établies'
+  - name: Règles pour les connexions autorisées
+    iptables: 
+      chain: INPUT
+      jump: ACCEPT
+      protocol: tcp
+      destination_port: "{{ item }}"
+      comment: "On accepte le port {{ item }}"
+    with_items:
+      - 22
+      - 80
+      - 443
+  - name: Règle pour tout le reste
+    iptables: 
+      chain: INPUT
+      jump: DROP 
+      comment: "On drop tout le reste."
+
+
 ### Configuration du service SSH : connexion par clef obligatoire; connexion root interdite.
   - name: Configuration du service SSH.
     lineinfile:
