@@ -307,7 +307,12 @@
           'datadirectory' => '{{ nginx_nexcloud_data_folder }}/data'
 
 
-
+### Arrêt des services inutiles.
+  - name: Arrêt services inutiles.
+    systemd:
+      enabled: no
+      state: stopped
+      name: named
 
 ### Configuration du service SSH : connexion par clef obligatoire; connexion root interdite.
   - name: Configuration du service SSH.
