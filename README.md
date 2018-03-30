@@ -12,6 +12,9 @@ export https_proxy=${http_proxy}
 ## Obligatoire
   * Déployer la recette sur la machine concernée par le déploiement (`recipe.yml`) dans la suite du document.
   * Déployer les éventuelles autorités de certification internes sur la machine concernée par le déploiement. Le dossier sera référencé dans la suite par `ac_path`.
+  * Installer les paquets nécessaires : 
+    * `ansible`
+    * `python2-passlib` (ne vient pas avec sous ArchLinux).
   * Aller à l'endroit où la recette a été copiée et lancer le déploiement.
 ```
 ansible-playbook recipe.yml
@@ -27,6 +30,9 @@ Variable | Utilité
 
 
 # Présentation des recettes
+## `archlinux_srv.yml`
+Contient la recette de l'installation de mon p'tit serveur à moi. :-)
+
 ## `centos_dev.yml`
 Installation d'un socle qui permet de développer sur une VM `CentOS` toute fraîchement installée.
 ### Problèmes & améliorations possibles

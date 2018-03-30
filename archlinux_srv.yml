@@ -1,0 +1,327 @@
+- name: Playbook dédié à l'installation de mon serveur personnel.
+  hosts: localhost
+  connection: local
+  vars_prompt:
+    - name: "user"
+      private: no
+      prompt: "Compte utilisateur à créer"
+    - name: "password"
+      prompt: "Mot de passe du compte a creer"
+      private: yes
+      encrypt: "sha512_crypt"
+      salt_size: 7
+    - name: "mysql_root_password"
+      prompt: "Mot de passe root MySQL"
+      default: "root"
+    - name: "mysql_nextcloud_db"
+      default: "nextcloud"
+      prompt: "Nom de la base de données pour l'instance NextCloud"
+      private: no
+    - name: "mysql_nextcloud_login"
+      default: "nextcloud"
+      prompt: "Nom du compte de base de données pour l'instance NextCloud"
+      private: no
+    - name: "mysql_nextcloud_password"
+      prompt: "Mot de passe du compte de base de données pour l'instance NextCloud"
+      default: "nextcloud"
+      private: yes
+    - name: "nginx_nextcloud_server_name"
+      prompt: "Nom du vhost nextcloud"
+      private: no
+    - name: "nginx_nextcloud_certificate_file"
+      prompt: "Emplacement du fichier de certificat pour le vhost nextcloud"
+      private: no
+    - name: "nginx_nextcloud_certificate_key"
+      prompt: "Emplacement du fichier de clef pour le vhost nextcloud"
+      private: no
+    - name: "nginx_nexcloud_data_folder"
+      prompt: "Où souhaitez vous conserver les données nextcloud?"
+      default: "/home/nextcloud"
+      private: no
+
+  vars:
+    nextcloud_pacman_hook: |
+       Update Nextcloud when core or -apps are touched
+       [Trigger]
+       Operation = Install
+       Operation = Upgrade
+       Type = Package
+       Target = nextcloud
+       Target = nextcloud-app-*
+       [Action]
+       Description = Updating Nextcloud installation
+       When = PostTransaction
+       Exec = /usr/bin/runuser -u http -- /usr/bin/php /usr/share/webapps/nextcloud/occ upgrade
+    nginx_nginx_conf_file: |
+      worker_processes  1;
+      events {
+        worker_connections  1024;
+      }
+      http {
+        include                         /etc/nginx/mime.types;
+        default_type                    application/octet-stream;
+        sendfile                        on;
+        keepalive_timeout               65;
+        server_names_hash_bucket_size   64;
+        include                         /etc/nginx/conf.d/*.conf;
+      }
+    sudoers: |
+      root                ALL=(ALL) ALL
+      {{ user }}               ALL=(ALL) ALL
+      Defaults:{{ user }}      !authenticate
+  tasks:
+### Installation des paquets requis.
+  - name: Mise à jour du système.
+    pacman:
+      update_cache: yes
+      upgrade: yes
+  - name: Installation des paquets nécessaires.
+    pacman:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - mariadb
+      - vim
+      - sudo 
+      - nginx-mainline
+      - nextcloud
+      - php
+      - php-intl
+      - php-gd
+      - php-fpm
+      - certbot
+      - certbot-nginx
+      - mysql-python
+
+### Gestion de l'utilisateur à créer.
+  - name: "Création de l'utilisateur {{ user }}."
+    user:
+      name: "{{ user }}"
+      comment: "Utilisateur créé automatiquement par ansible."
+      shell: /bin/bash
+      state: present
+      password: "{{ password }}"
+      createhome: yes
+      update_password: always
+  - name: "Création du dossier $HOME/.ssh"
+    file:
+      path: "/home/{{ user }}/.ssh/"
+      owner: "{{ user }}"
+      group: "{{ user }}"
+      state: directory
+      mode: 0700
+  - name: "Création du fichier $HOME/.ssh/authorized_keys"
+    copy: 
+      content: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEmC6lzh8LkOKwAcZr/ji3h9WsEWfSZ5nGam7IesQhz"
+      dest: "/home/{{ user }}/.ssh/authorized_keys"
+
+### Configuration du sudo : l'utilisateur créé a le droit de tout faire.
+  - name: Configuration du sudo.
+    copy: 
+      content: |
+        {{ sudoers }}
+      dest: "/etc/sudoers"
+      validate: '/usr/sbin/visudo -cf %s'
+
+### Sécurisation du service mariadb préalable à NextCloud
+  - name: Couper le service MySQL
+    systemd:
+      name: mariadb
+      enabled: no
+      state: stopped
+  - name: Lancer la commande de sécurisation
+    command: 'mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql'
+  - name: Lancer le service MySQL
+    systemd:
+      name: mariadb
+      enabled: no
+      state: started
+###   Sur la base de https://github.com/PCextreme/ansible-role-mariadb/blob/master/tasks/mysql_secure_installation.yml
+###     Comme je suis un gros cochon, pour m'assurer que le script est réentrant, je droppe les erreurs... \o/
+  - name: Définition du mot de passe root
+    mysql_user:
+      login_user: root
+      name: root
+      host: localhost
+      password: "{{ mysql_root_password }}"
+      state: present
+    ignore_errors: yes
+  - name: Définition du mot de passe root
+    mysql_user:
+      login_user: root
+      login_password: "{{ mysql_root_password }}"
+      name: root
+      host: localhost
+      password: "{{ mysql_root_password }}"
+      state: present
+    ignore_errors: yes
+  - name: Équivalent à mysql_secure_installation
+    command: "mysql -ne '{{ item }}' -p{{ mysql_root_password }}"
+    with_items:
+      - FLUSH PRIVILEGES;
+      - DELETE FROM mysql.user WHERE User="";
+      - DELETE FROM mysql.user WHERE User="root" AND Host NOT IN ("localhost", "127.0.0.1", "::1");
+      - DROP DATABASE IF EXISTS test;
+      - DELETE FROM mysql.db WHERE Db="test" OR Db="test\\_%";
+      - FLUSH PRIVILEGES;
+
+### Hooks pacman pour la mise à jour de NextCloud.
+  - name: Création du dossier contenant les hooks pacman.
+    file:
+      path: "/etc/pacman.d/hooks/"
+      owner: "root"
+      group: "root"
+      state: directory
+      mode: 0744
+  - name: Déploiement du fichier de hook pacman.
+    copy: 
+      content: |
+        {{ nextcloud_pacman_hook }}
+      dest: "/etc/pacman.d/hooks/nextcloud.hook"
+
+### Création de la base de données pour nextcloud.
+    - name: Création de la base de données nextcloud.
+      mysql_db:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        name: "{{ mysql_nextcloud_db }}"
+        state: present
+        encoding: utf8
+        collation: utf8_unicode_ci
+    - name: Création de l'utilisateur nextcloud.
+      mysql_user:
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+        name: "{{ mysql_nextcloud_login }}"
+        password: "{{ mysql_nextcloud_password }}"
+        priv: "{{ mysql_nextcloud_db }}.*:ALL"
+        state: present
+        update_password: always
+
+### Configuration préliminaire de PHP.
+  - name: "Activation des modules php nécessaires."
+    lineinfile:
+      dest: /etc/php/php.ini
+      regexp: "^;?extension={{ item }}"
+      line: "extension={{ item }}"
+      backup: yes
+    with_items:
+      - mysqli
+      - pdo_mysql
+      - iconv
+      - intl
+      - gd
+
+### Configuration de nginx pour nextcloud.
+  - name: Création des dossiers nécessaires à nginx.
+    file:
+      dest: "/etc/nginx/{{ item }}"
+      state: directory
+      owner: root
+      group: root
+      mode: "0644"
+    with_items:
+      - conf.d
+      - ssl
+  - name: Activation de l'include dynamique.
+    copy: 
+      content: |
+        {{ nginx_nginx_conf_file }}
+      dest: "/etc/nginx/nginx.conf"
+      backup: yes
+      validate: "/usr/bin/nginx -c %s -t"
+  - name: Démarrage de tous les services nécessaires, pour le fun.
+    systemd:
+      enabled: no
+      name: "{{ item }}"
+      state: started
+    with_items:
+      - php-fpm
+      - nginx
+      - mariadb
+
+  - name: Déploiement des éléments de configuration nginx.
+    copy:
+      src: "{{ item.src }}"
+      dest: "/etc/nginx/{{ item.dest }}"
+      owner: root
+      group: root
+    with_items:
+      - { src: ./nextcloud.conf, dest: conf.d/nextcloud.conf }
+      - { src: "{{ nginx_nextcloud_certificate_file }}", dest: ssl/nextcloud.crt }
+      - { src: "{{ nginx_nextcloud_certificate_key }}", dest: ssl/nextcloud.key }
+  - name: Ajustement du fichier de configuration nginx.
+    replace:
+      path: /etc/nginx/conf.d/nextcloud.conf
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - { regexp: "__SERVER_NAME__", replace: "{{ nginx_nextcloud_server_name }}" }
+      - { regexp: "__CERTIFICATE_FILE__", replace: "/etc/nginx/ssl/nextcloud.crt" }
+      - { regexp: "__CERTIFICATE_KEY__", replace: "/etc/nginx/ssl/nextcloud.key" }
+
+  - name: On redémarre tout ça paske ça fait pas de mal hein...
+    systemd:
+      enabled: no
+      name: "{{ item }}"
+      state: restarted
+    with_items:
+      - php-fpm
+      - nginx
+      - mariadb
+      group: root
+
+  - name: Création des dossiers de stockage pour nextcloud.
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: http
+      group: http
+      mode: "0700"
+    with_items:
+      - "{{ nginx_nexcloud_data_folder }}"
+      - "{{ nginx_nexcloud_data_folder }}/data"
+      - "{{ nginx_nexcloud_data_folder }}/apps2"
+  - name: Ajustement du fichier /etc/webapps/nextcloud/config/config.php
+    blockinfile:
+      insertbefore: "\\);"
+      path: /etc/webapps/nextcloud/config/config.php
+      backup: yes
+      validate: "php %s"
+      content: |
+        'apps_paths' =>
+          array (
+            0 =>
+            array (
+              'path' => '/usr/share/webapps/nextcloud/apps',
+              'url' => '/apps',
+              'writable' => false,
+            ),
+            1 =>
+            array (
+              'path' => '{{ nginx_nexcloud_data_folder }}/apps2',
+              'url' => '/apps2',
+              'writable' => true,
+            ),
+          ),
+          'datadirectory' => '{{ nginx_nexcloud_data_folder }}/data'
+
+
+
+
+### Configuration du service SSH : connexion par clef obligatoire; connexion root interdite.
+  - name: Configuration du service SSH.
+    lineinfile:
+      dest: /etc/ssh/sshd_config
+      regexp: "{{ item.regexp }}"
+      line: "{{ item.line }}"
+      backup: yes
+      validate: sshd -f %s -T
+    with_items:
+      - { regexp: '^#?PermitRootLogin', line: 'PermitRootLogin no' }
+      - { regexp: '^#?PasswordAuthentication', line: 'PasswordAuthentication no' }
+  - name: Prise en compte des changements apportés à la conf.
+    systemd:
+      enabled: yes
+      name: sshd
+      state: reloaded
