@@ -32,6 +32,10 @@ Variable | Utilité
 # Présentation des recettes
 ## `archlinux_srv.yml`
 Contient la recette de l'installation de mon p'tit serveur à moi. :-)
+### Problèmes restants
+  * J'ai l'impression d'avoir un problème avec le `hook` `pacman`. J'ai pas encore creusé.
+  * Faut intégrer la gestion de Let's Encrypt pour les certificats.
+  * Faut déployer un firewall aussi...
 
 ## `centos_dev.yml`
 Installation d'un socle qui permet de développer sur une VM `CentOS` toute fraîchement installée.
