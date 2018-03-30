@@ -20,6 +20,23 @@ export https_proxy=${http_proxy}
 ansible-playbook recipe.yml
 ```
 
+
+
+# Présentation des recettes
+## `archlinux_srv.yml`
+Contient la recette de l'installation de mon p'tit serveur à moi. :-)
+
+### Problèmes restants
+Problème | État
+---------|-----
+J'ai eu l'impression d'un truc bizarre avec le `hook` de `pacman` | Je reproduis pas le 2018-03-30.
+Intégration de Let's Encrypt. | TODO.
+Déploiement d'un firewall. | TODO.
+Déploiement du `gitlab`. | TODO.
+
+## `centos_dev.yml`
+Installation d'un socle qui permet de développer sur une VM `CentOS` toute fraîchement installée.
+
 ### Matrice des variables
 Variable | Utilité
 ---------|---------
@@ -28,17 +45,6 @@ Variable | Utilité
 `vb_version` | Version de l'hyperviseur VirtualBox. Utilisé pour installer les VirtualBoxAdditions.
 `ac_path` | Emplacement sur la machine virtuelle dans lequel on a copié les autorités de certification internes.
 
-
-# Présentation des recettes
-## `archlinux_srv.yml`
-Contient la recette de l'installation de mon p'tit serveur à moi. :-)
-### Problèmes restants
-  * J'ai l'impression d'avoir un problème avec le `hook` `pacman`. J'ai pas encore creusé.
-  * Faut intégrer la gestion de Let's Encrypt pour les certificats.
-  * Faut déployer un firewall aussi...
-
-## `centos_dev.yml`
-Installation d'un socle qui permet de développer sur une VM `CentOS` toute fraîchement installée.
 ### Problèmes & améliorations possibles
   * Récupération du RPM `elasticsearch` : Je devrais normalement faire comme suit, mais ça pose des problèmes de prise en compte de la variable d'environnement `${http_proxy}`.
 
