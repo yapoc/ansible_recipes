@@ -247,7 +247,7 @@
       owner: root
       group: root
     with_items:
-      - { src: ./nextcloud.conf, dest: conf.d/nextcloud.conf }
+      - { src: ./files/nextcloud.conf, dest: conf.d/nextcloud.conf }
       - { src: "{{ nginx_nextcloud_certificate_file }}", dest: ssl/nextcloud.crt }
       - { src: "{{ nginx_nextcloud_certificate_key }}", dest: ssl/nextcloud.key }
   - name: Ajustement du fichier de configuration nginx.
